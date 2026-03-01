@@ -1,4 +1,55 @@
 {% extends "base.html" %}
 {% block content %}
-    <h1>Welcome to the Home Page</h1>
+    <h1 class="mb-4">Meter Data Dashboard</h1>
+
+    <section class="mb-5">
+        <h2>Data Preview</h2>
+        {{ table_html|safe }}
+    </section>
+
+    <section>
+        <h2>Volume Over Time</h2>
+        <canvas id="volumeChart" width="800" height="400"></canvas>
+    </section>
+
+    <!-- chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('volumeChart').getContext('2d');
+        // chart_data is now an object mapping "type:id" -> {timestamps, volumes}
+        // we need a common set of labels (timestamps) and multiple datasets.
+        const datasets = [];
+        let labels = [];
+        for (const [key, series] of Object.entries({{ chart_data|tojson }})) {
+            // use the first series as label container if labels empty
+            if (labels.length === 0) {
+                labels = series.timestamps;
+            }
+            datasets.push({
+                label: key,
+                data: series.volumes,
+                fill: false,
+                borderColor: '#' + Math.floor(Math.random()*16777215).toString(16),
+                tension: 0.1
+            });
+        }
+        const data = { labels, datasets };
+        const config = {
+            type: 'line',
+            data: data,
+            options: {
+                scales: {
+                    x: {
+                        display: true,
+                        title: { display: true, text: 'Timestamp' }
+                    },
+                    y: {
+                        display: true,
+                        title: { display: true, text: 'Volume (L)' }
+                    }
+                }
+            }
+        };
+        new Chart(ctx, config);
+    </script>
 {% endblock %}
